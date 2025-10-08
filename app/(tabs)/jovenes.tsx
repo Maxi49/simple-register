@@ -4,12 +4,12 @@ import { Platform, StyleSheet, TextInput, Button, View, Text } from 'react-nativ
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { init, insertarJoven, obtenerJovenes } from '@/db/database';
+import { init, insertarJoven, obtenerJovenes, Joven } from '@/db/database';
 
 export default function JovenesScreen() {
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
-  const [jovenes, setJovenes] = useState<any[]>([]);
+  const [jovenes, setJovenes] = useState<Joven[]>([]);
 
   useEffect(() => {
     init()
@@ -26,7 +26,7 @@ export default function JovenesScreen() {
   const loadJovenes = () => {
     obtenerJovenes()
       .then(result => {
-        setJovenes(result as any[]);
+        setJovenes(result);
       })
       .catch(err => {
         console.log('Error loading jovenes');
@@ -71,7 +71,7 @@ export default function JovenesScreen() {
       <Button title="Insertar" onPress={handleInsertarJoven} />
       <View style={styles.listContainer}>
         {jovenes.map(item => (
-          <Text key={item.id}>{`ID: ${item.id}, Nombre: ${item.nombre}, Apellido: ${item.apellido}`}</Text>
+          <Text key={item.id} style={styles.itemText}>{`ID: ${item.id}, Nombre: ${item.nombre}, Apellido: ${item.apellido}`}</Text>
         ))}
       </View>
     </ThemedView>
@@ -94,4 +94,7 @@ const styles = StyleSheet.create({
   listContainer: {
     marginTop: 20,
   },
+  itemText: {
+    color: 'white'
+  }
 });

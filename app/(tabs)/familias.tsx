@@ -4,12 +4,12 @@ import { Platform, StyleSheet, TextInput, Button, View, Text } from 'react-nativ
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { init, insertarFamilia, obtenerFamilias } from '@/db/database';
+import { init, insertarFamilia, obtenerFamilias, Familia } from '@/db/database';
 
 export default function FamiliasScreen() {
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
-  const [familias, setFamilias] = useState<any[]>([]);
+  const [familias, setFamilias] = useState<Familia[]>([]);
 
   useEffect(() => {
     init()
@@ -26,7 +26,7 @@ export default function FamiliasScreen() {
   const loadFamilias = () => {
     obtenerFamilias()
       .then(result => {
-        setFamilias(result as any[]);
+        setFamilias(result);
       })
       .catch(err => {
         console.log('Error loading familias');
@@ -71,7 +71,7 @@ export default function FamiliasScreen() {
       <Button title="Insertar" onPress={handleInsertarFamilia} />
       <View style={styles.listContainer}>
         {familias.map(item => (
-          <Text key={item.id}>{`ID: ${item.id}, Nombre: ${item.nombre}, Apellido: ${item.apellido}`}</Text>
+          <Text key={item.id} style={styles.itemText}>{`ID: ${item.id}, Nombre: ${item.nombre}, Apellido: ${item.apellido}`}</Text>
         ))}
       </View>
     </ThemedView>
@@ -94,4 +94,7 @@ const styles = StyleSheet.create({
   listContainer: {
     marginTop: 20,
   },
+  itemText: {
+    color: 'white'
+  }
 });

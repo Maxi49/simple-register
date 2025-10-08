@@ -4,12 +4,12 @@ import { Platform, StyleSheet, TextInput, Button, View, Text } from 'react-nativ
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { init, insertarDonacion, obtenerDonaciones } from '@/db/database';
+import { init, insertarDonacion, obtenerDonaciones, Donacion } from '@/db/database';
 
 export default function DonacionesScreen() {
   const [tipo, setTipo] = useState('');
   const [cantidad, setCantidad] = useState('');
-  const [donaciones, setDonaciones] = useState<any[]>([]);
+  const [donaciones, setDonaciones] = useState<Donacion[]>([]);
 
   useEffect(() => {
     init()
@@ -26,7 +26,7 @@ export default function DonacionesScreen() {
   const loadDonaciones = () => {
     obtenerDonaciones()
       .then(result => {
-        setDonaciones(result as any[]);
+        setDonaciones(result);
       })
       .catch(err => {
         console.log('Error loading donaciones');
@@ -78,7 +78,7 @@ export default function DonacionesScreen() {
       <Button title="Insertar" onPress={handleInsertarDonacion} />
       <View style={styles.listContainer}>
         {donaciones.map(item => (
-          <Text key={item.id}>{`ID: ${item.id}, Tipo: ${item.tipo}, Cantidad: ${item.cantidad}`}</Text>
+          <Text key={item.id} style={styles.itemText}>{`ID: ${item.id}, Tipo: ${item.tipo}, Cantidad: ${item.cantidad}`}</Text>
         ))}
       </View>
     </ThemedView>
@@ -101,4 +101,7 @@ const styles = StyleSheet.create({
   listContainer: {
     marginTop: 20,
   },
+  itemText: {
+    color: 'white'
+  }
 });

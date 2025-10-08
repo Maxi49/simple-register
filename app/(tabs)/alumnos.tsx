@@ -4,12 +4,12 @@ import { Platform, StyleSheet, TextInput, Button, View, Text } from 'react-nativ
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { init, insertarAlumno, obtenerAlumnos } from '@/db/database';
+import { init, insertarAlumno, obtenerAlumnos, Alumno } from '@/db/database';
 
 export default function AlumnosScreen() {
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
-  const [alumnos, setAlumnos] = useState<any[]>([]);
+  const [alumnos, setAlumnos] = useState<Alumno[]>([]);
 
   useEffect(() => {
     init()
@@ -26,7 +26,7 @@ export default function AlumnosScreen() {
   const loadAlumnos = () => {
     obtenerAlumnos()
       .then(result => {
-        setAlumnos(result as any[]);
+        setAlumnos(result);
       })
       .catch(err => {
         console.log('Error loading alumnos');
@@ -71,7 +71,7 @@ export default function AlumnosScreen() {
       <Button title="Insertar" onPress={handleInsertarAlumno} />
       <View style={styles.listContainer}>
         {alumnos.map(item => (
-          <Text key={item.id}>{`ID: ${item.id}, Nombre: ${item.nombre}, Apellido: ${item.apellido}`}</Text>
+          <Text key={item.id} style={styles.itemText}>{`ID: ${item.id}, Nombre: ${item.nombre}, Apellido: ${item.apellido}`}</Text>
         ))}
       </View>
     </ThemedView>
@@ -94,4 +94,7 @@ const styles = StyleSheet.create({
   listContainer: {
     marginTop: 20,
   },
+  itemText: {
+    color: 'white'
+  }
 });

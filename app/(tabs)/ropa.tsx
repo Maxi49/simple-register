@@ -4,12 +4,12 @@ import { Platform, StyleSheet, TextInput, Button, View, Text } from 'react-nativ
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { init, insertarRopa, obtenerRopa } from '@/db/database';
+import { init, insertarRopa, obtenerRopa, Ropa } from '@/db/database';
 
 export default function RopaScreen() {
   const [cantidad, setCantidad] = useState('');
   const [genero, setGenero] = useState<'hombre' | 'mujer'>('hombre');
-  const [ropa, setRopa] = useState<any[]>([]);
+  const [ropa, setRopa] = useState<Ropa[]>([]);
 
   useEffect(() => {
     init()
@@ -26,7 +26,7 @@ export default function RopaScreen() {
   const loadRopa = () => {
     obtenerRopa()
       .then(result => {
-        setRopa(result as any[]);
+        setRopa(result);
       })
       .catch(err => {
         console.log('Error loading ropa');

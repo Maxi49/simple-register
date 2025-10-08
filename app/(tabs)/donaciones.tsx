@@ -4,18 +4,18 @@ import { Platform, StyleSheet, TextInput, Button, View, Text } from 'react-nativ
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { init, insertarRopa, obtenerRopa } from '@/db/database';
+import { init, insertarDonacion, obtenerDonaciones } from '@/db/database';
 
-export default function HomeScreen() {
+export default function DonacionesScreen() {
+  const [tipo, setTipo] = useState('');
   const [cantidad, setCantidad] = useState('');
-  const [genero, setGenero] = useState<'hombre' | 'mujer'>('hombre');
-  const [ropa, setRopa] = useState<any[]>([]);
+  const [donaciones, setDonaciones] = useState<any[]>([]);
 
   useEffect(() => {
     init()
       .then(() => {
         console.log('Database initialized');
-        loadRopa();
+        loadDonaciones();
       })
       .catch(err => {
         console.log('Database initialization failed');
@@ -23,39 +23,51 @@ export default function HomeScreen() {
       });
   }, []);
 
-  const loadRopa = () => {
-    obtenerRopa()
+  const loadDonaciones = () => {
+    obtenerDonaciones()
       .then(result => {
-        setRopa(result as any[]);
+        setDonaciones(result as any[]);
       })
       .catch(err => {
-        console.log('Error loading ropa');
+        console.log('Error loading donaciones');
         console.log(err);
       });
   };
 
-  const handleInsertarRopa = () => {
+  const handleInsertarDonacion = () => {
     const numCantidad = parseInt(cantidad, 10);
     if (isNaN(numCantidad) || numCantidad <= 0) {
       alert('Por favor, ingrese una cantidad válida.');
       return;
     }
 
-    insertarRopa(numCantidad, genero)
+    if (!tipo) {
+      alert('Por favor, ingrese un tipo de donación.');
+      return;
+    }
+
+    insertarDonacion(tipo, numCantidad)
       .then(() => {
-        console.log('Ropa insertada');
+        console.log('Donación insertada');
+        setTipo('');
         setCantidad('');
-        loadRopa();
+        loadDonaciones();
       })
       .catch(err => {
-        console.log('Error insertando ropa');
+        console.log('Error insertando donación');
         console.log(err);
       });
   };
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="title">Ropa</ThemedText>
+      <ThemedText type="title">Donaciones</ThemedText>
+      <TextInput
+        style={styles.input}
+        placeholder="Tipo de donación"
+        value={tipo}
+        onChangeText={setTipo}
+      />
       <TextInput
         style={styles.input}
         placeholder="Cantidad"
@@ -63,14 +75,10 @@ export default function HomeScreen() {
         value={cantidad}
         onChangeText={setCantidad}
       />
-      <View style={styles.buttonGroup}>
-        <Button title="Hombre" onPress={() => setGenero('hombre')} color={genero === 'hombre' ? 'blue' : 'gray'} />
-        <Button title="Mujer" onPress={() => setGenero('mujer')} color={genero === 'mujer' ? 'pink' : 'gray'} />
-      </View>
-      <Button title="Insertar" onPress={handleInsertarRopa} />
+      <Button title="Insertar" onPress={handleInsertarDonacion} />
       <View style={styles.listContainer}>
-        {ropa.map(item => (
-          <Text key={item.id}>{`ID: ${item.id}, Cantidad: ${item.cantidad}, Genero: ${item.genero}`}</Text>
+        {donaciones.map(item => (
+          <Text key={item.id}>{`ID: ${item.id}, Tipo: ${item.tipo}, Cantidad: ${item.cantidad}`}</Text>
         ))}
       </View>
     </ThemedView>
@@ -89,11 +97,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     paddingHorizontal: 10,
     color: 'white'
-  },
-  buttonGroup: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 10,
   },
   listContainer: {
     marginTop: 20,

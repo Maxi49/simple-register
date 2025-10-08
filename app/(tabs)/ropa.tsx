@@ -6,7 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { init, insertarRopa, obtenerRopa } from '@/db/database';
 
-export default function HomeScreen() {
+export default function RopaScreen() {
   const [cantidad, setCantidad] = useState('');
   const [genero, setGenero] = useState<'hombre' | 'mujer'>('hombre');
   const [ropa, setRopa] = useState<any[]>([]);
@@ -63,14 +63,14 @@ export default function HomeScreen() {
         value={cantidad}
         onChangeText={setCantidad}
       />
-      <View style={styles.buttonGroup}>
-        <Button title="Hombre" onPress={() => setGenero('hombre')} color={genero === 'hombre' ? 'blue' : 'gray'} />
-        <Button title="Mujer" onPress={() => setGenero('mujer')} color={genero === 'mujer' ? 'pink' : 'gray'} />
+      <View style={styles.buttonContainer}>
+        <Button title="Hombre" onPress={() => setGenero('hombre')} />
+        <Button title="Mujer" onPress={() => setGenero('mujer')} />
       </View>
       <Button title="Insertar" onPress={handleInsertarRopa} />
       <View style={styles.listContainer}>
         {ropa.map(item => (
-          <Text key={item.id}>{`ID: ${item.id}, Cantidad: ${item.cantidad}, Genero: ${item.genero}`}</Text>
+          <Text key={item.id} style={styles.itemText}>{`ID: ${item.id}, Cantidad: ${item.cantidad}, Género: ${item.genero}`}</Text>
         ))}
       </View>
     </ThemedView>
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     color: 'white'
   },
-  buttonGroup: {
+  buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginBottom: 10,
@@ -98,4 +98,7 @@ const styles = StyleSheet.create({
   listContainer: {
     marginTop: 20,
   },
+  itemText: {
+    color: 'white'
+  }
 });

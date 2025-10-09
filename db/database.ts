@@ -1,7 +1,11 @@
+import * as SQLite from 'expo-sqlite';
 
-import * as SQLite from 'expo-sqlite/legacy';
-
-const db = SQLite.openDatabase('collaborative.db');
+const db = (() => {
+  if (typeof SQLite.openDatabase !== 'function') {
+    throw new Error('No se pudo inicializar la DB: openDatabase no esta disponible.');
+  }
+  return SQLite.openDatabase('collaborative.db');
+})();
 
 // Interfaces para el tipado de datos
 export interface Ropa {
@@ -34,180 +38,153 @@ export interface Donacion {
   cantidad: number;
 }
 
-export const init = (): Promise<boolean> => {
-  const promise = new Promise<boolean>((resolve, reject) => {
-    db.transaction(tx => {
-      tx.executeSql(
-        'CREATE TABLE IF NOT EXISTS ropa (id INTEGER PRIMARY KEY NOT NULL, cantidad INTEGER NOT NULL, genero TEXT NOT NULL);',
-        [],
-        () => { resolve(true); },
-        (_, err) => { reject(err); return true; }
-      );
-      tx.executeSql(
-        'CREATE TABLE IF NOT EXISTS jovenes (id INTEGER PRIMARY KEY NOT NULL, nombre TEXT NOT NULL, apellido TEXT NOT NULL);',
-        [],
-        () => { resolve(true); },
-        (_, err) => { reject(err); return true; }
-      );
-      tx.executeSql(
-        'CREATE TABLE IF NOT EXISTS alumnos (id INTEGER PRIMARY KEY NOT NULL, nombre TEXT NOT NULL, apellido TEXT NOT NULL);',
-        [],
-        () => { resolve(true); },
-        (_, err) => { reject(err); return true; }
-      );
-      tx.executeSql(
-        'CREATE TABLE IF NOT EXISTS familias (id INTEGER PRIMARY KEY NOT NULL, nombre TEXT NOT NULL, apellido TEXT NOT NULL);',
-        [],
-        () => { resolve(true); },
-        (_, err) => { reject(err); return true; }
-      );
-      tx.executeSql(
-        'CREATE TABLE IF NOT EXISTS donaciones (id INTEGER PRIMARY KEY NOT NULL, tipo TEXT NOT NULL, cantidad INTEGER NOT NULL);',
-        [],
-        () => { resolve(true); },
-        (_, err) => { reject(err); return true; }
-      );
-    });
-  });
-  return promise;
-};
+const createTxErrorHandler =
+  (reject: (error: any) => void) =>
+  (_tx: SQLite.SQLTransaction, error: SQLite.SQLError): boolean => {
+    reject(error);
+    return true;
+  };
 
-export const insertarRopa = (cantidad: number, genero: 'hombre' | 'mujer'): Promise<SQLite.SQLResultSet> => {
-  const promise = new Promise<SQLite.SQLResultSet>((resolve, reject) => {
-    db.transaction(tx => {
-      tx.executeSql(
-        'INSERT INTO ropa (cantidad, genero) VALUES (?, ?);',
-        [cantidad, genero],
-        (_, result) => { resolve(result); },
-        (_, err) => { reject(err); return true; }
-      );
-    });
-  });
-  return promise;
-};
+export const init = (): Promise<boolean> =>
+  new Promise<boolean>((resolve, reject) => {
+    let settled = false;
+    const safeResolve = () => {
+      if (!settled) {
+        settled = true;
+        resolve(true);
+      }
+    };
+    const safeReject = (error: any) => {
+      if (!settled) {
+        settled = true;
+        reject(error);
+      }
+    };
 
-export const obtenerRopa = (): Promise<Ropa[]> => {
-  const promise = new Promise<Ropa[]>((resolve, reject) => {
-    db.transaction(tx => {
-      tx.executeSql(
-        'SELECT * FROM ropa;',
-        [],
-        (_, result) => { resolve(result.rows._array); },
-        (_, err) => { reject(err); return true; }
-      );
-    });
+    db.transaction(
+      tx => {
+        const onError = createTxErrorHandler(safeReject);
+        tx.executeSql(
+          'CREATE TABLE IF NOT EXISTS ropa (id INTEGER PRIMARY KEY NOT NULL, cantidad INTEGER NOT NULL, genero TEXT NOT NULL);',
+          [],
+          undefined,
+          onError
+        );
+        tx.executeSql(
+          'CREATE TABLE IF NOT EXISTS jovenes (id INTEGER PRIMARY KEY NOT NULL, nombre TEXT NOT NULL, apellido TEXT NOT NULL);',
+          [],
+          undefined,
+          onError
+        );
+        tx.executeSql(
+          'CREATE TABLE IF NOT EXISTS alumnos (id INTEGER PRIMARY KEY NOT NULL, nombre TEXT NOT NULL, apellido TEXT NOT NULL);',
+          [],
+          undefined,
+          onError
+        );
+        tx.executeSql(
+          'CREATE TABLE IF NOT EXISTS familias (id INTEGER PRIMARY KEY NOT NULL, nombre TEXT NOT NULL, apellido TEXT NOT NULL);',
+          [],
+          undefined,
+          onError
+        );
+        tx.executeSql(
+          'CREATE TABLE IF NOT EXISTS donaciones (id INTEGER PRIMARY KEY NOT NULL, tipo TEXT NOT NULL, cantidad INTEGER NOT NULL);',
+          [],
+          undefined,
+          onError
+        );
+      },
+      safeReject,
+      safeResolve
+    );
   });
-  return promise;
-};
 
-export const insertarJoven = (nombre: string, apellido: string): Promise<SQLite.SQLResultSet> => {
-  const promise = new Promise<SQLite.SQLResultSet>((resolve, reject) => {
-    db.transaction(tx => {
-      tx.executeSql(
-        'INSERT INTO jovenes (nombre, apellido) VALUES (?, ?);',
-        [nombre, apellido],
-        (_, result) => { resolve(result); },
-        (_, err) => { reject(err); return true; }
-      );
-    });
-  });
-  return promise;
-};
+const runInsert = (sql: string, params: any[] = []): Promise<SQLite.SQLResultSet> =>
+  new Promise<SQLite.SQLResultSet>((resolve, reject) => {
+    let settled = false;
+    const safeResolve = (result: SQLite.SQLResultSet) => {
+      if (!settled) {
+        settled = true;
+        resolve(result);
+      }
+    };
+    const safeReject = (error: any) => {
+      if (!settled) {
+        settled = true;
+        reject(error);
+      }
+    };
 
-export const obtenerJovenes = (): Promise<Joven[]> => {
-  const promise = new Promise<Joven[]>((resolve, reject) => {
-    db.transaction(tx => {
-      tx.executeSql(
-        'SELECT * FROM jovenes;',
-        [],
-        (_, result) => { resolve(result.rows._array); },
-        (_, err) => { reject(err); return true; }
-      );
-    });
+    db.transaction(
+      tx => {
+        const onError = createTxErrorHandler(safeReject);
+        tx.executeSql(
+          sql,
+          params,
+          (_: SQLite.SQLTransaction, result: SQLite.SQLResultSet) => safeResolve(result),
+          onError
+        );
+      },
+      safeReject
+    );
   });
-  return promise;
-};
 
-export const insertarAlumno = (nombre: string, apellido: string): Promise<SQLite.SQLResultSet> => {
-  const promise = new Promise<SQLite.SQLResultSet>((resolve, reject) => {
-    db.transaction(tx => {
-      tx.executeSql(
-        'INSERT INTO alumnos (nombre, apellido) VALUES (?, ?);',
-        [nombre, apellido],
-        (_, result) => { resolve(result); },
-        (_, err) => { reject(err); return true; }
-      );
-    });
-  });
-  return promise;
-};
+const runSelect = <T = any[]>(sql: string, params: any[] = []): Promise<T> =>
+  new Promise<T>((resolve, reject) => {
+    let settled = false;
+    const safeResolve = (rows: T) => {
+      if (!settled) {
+        settled = true;
+        resolve(rows);
+      }
+    };
+    const safeReject = (error: any) => {
+      if (!settled) {
+        settled = true;
+        reject(error);
+      }
+    };
 
-export const obtenerAlumnos = (): Promise<Alumno[]> => {
-  const promise = new Promise<Alumno[]>((resolve, reject) => {
-    db.transaction(tx => {
-      tx.executeSql(
-        'SELECT * FROM alumnos;',
-        [],
-        (_, result) => { resolve(result.rows._array); },
-        (_, err) => { reject(err); return true; }
-      );
-    });
+    db.transaction(
+      tx => {
+        const onError = createTxErrorHandler(safeReject);
+        tx.executeSql(
+          sql,
+          params,
+          (_: SQLite.SQLTransaction, result: SQLite.SQLResultSet) => {
+            const rows = result.rows ? (result.rows._array as T) : ([] as unknown as T);
+            safeResolve(rows);
+          },
+          onError
+        );
+      },
+      safeReject
+    );
   });
-  return promise;
-};
 
-export const insertarFamilia = (nombre: string, apellido: string): Promise<SQLite.SQLResultSet> => {
-  const promise = new Promise<SQLite.SQLResultSet>((resolve, reject) => {
-    db.transaction(tx => {
-      tx.executeSql(
-        'INSERT INTO familias (nombre, apellido) VALUES (?, ?);',
-        [nombre, apellido],
-        (_, result) => { resolve(result); },
-        (_, err) => { reject(err); return true; }
-      );
-    });
-  });
-  return promise;
-};
+// Funciones exportadas
+export const insertarRopa = (cantidad: number, genero: 'hombre' | 'mujer') =>
+  runInsert('INSERT INTO ropa (cantidad, genero) VALUES (?, ?);', [cantidad, genero]);
 
-export const obtenerFamilias = (): Promise<Familia[]> => {
-  const promise = new Promise<Familia[]>((resolve, reject) => {
-    db.transaction(tx => {
-      tx.executeSql(
-        'SELECT * FROM familias;',
-        [],
-        (_, result) => { resolve(result.rows._array); },
-        (_, err) => { reject(err); return true; }
-      );
-    });
-  });
-  return promise;
-};
+export const obtenerRopa = () => runSelect<Ropa[]>('SELECT * FROM ropa;');
 
-export const insertarDonacion = (tipo: string, cantidad: number): Promise<SQLite.SQLResultSet> => {
-  const promise = new Promise<SQLite.SQLResultSet>((resolve, reject) => {
-    db.transaction(tx => {
-      tx.executeSql(
-        'INSERT INTO donaciones (tipo, cantidad) VALUES (?, ?);',
-        [tipo, cantidad],
-        (_, result) => { resolve(result); },
-        (_, err) => { reject(err); return true; }
-      );
-    });
-  });
-  return promise;
-};
+export const insertarJoven = (nombre: string, apellido: string) =>
+  runInsert('INSERT INTO jovenes (nombre, apellido) VALUES (?, ?);', [nombre, apellido]);
 
-export const obtenerDonaciones = (): Promise<Donacion[]> => {
-  const promise = new Promise<Donacion[]>((resolve, reject) => {
-    db.transaction(tx => {
-      tx.executeSql(
-        'SELECT * FROM donaciones;',
-        [],
-        (_, result) => { resolve(result.rows._array); },
-        (_, err) => { reject(err); return true; }
-      );
-    });
-  });
-  return promise;
-};
+export const obtenerJovenes = () => runSelect<Joven[]>('SELECT * FROM jovenes;');
+
+export const insertarAlumno = (nombre: string, apellido: string) =>
+  runInsert('INSERT INTO alumnos (nombre, apellido) VALUES (?, ?);', [nombre, apellido]);
+
+export const obtenerAlumnos = () => runSelect<Alumno[]>('SELECT * FROM alumnos;');
+
+export const insertarFamilia = (nombre: string, apellido: string) =>
+  runInsert('INSERT INTO familias (nombre, apellido) VALUES (?, ?);', [nombre, apellido]);
+
+export const obtenerFamilias = () => runSelect<Familia[]>('SELECT * FROM familias;');
+
+export const insertarDonacion = (tipo: string, cantidad: number) =>
+  runInsert('INSERT INTO donaciones (tipo, cantidad) VALUES (?, ?);', [tipo, cantidad]);
+
+export const obtenerDonaciones = () => runSelect<Donacion[]>('SELECT * FROM donaciones;');

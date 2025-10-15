@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -27,6 +27,8 @@ import {
   subscribeToTable,
 } from '@/db/database';
 
+const PAGE_SIZE = 5;
+
 export default function DonacionesScreen() {
   const [donaciones, setDonaciones] = useState<Donacion[]>([]);
   const [tipo, setTipo] = useState('');
@@ -35,6 +37,7 @@ export default function DonacionesScreen() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -82,6 +85,10 @@ export default function DonacionesScreen() {
       unsubscribe();
     };
   }, [refresh]);
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [searchQuery, donaciones.length]);
 
   const resetForm = () => {
     setTipo('');
@@ -151,16 +158,32 @@ export default function DonacionesScreen() {
     ]);
   };
 
+  const sortedDonaciones = useMemo(
+    () => [...donaciones].sort((a, b) => b.id - a.id),
+    [donaciones]
+  );
+
   const filteredDonaciones = useMemo(() => {
     const term = searchQuery.trim().toLowerCase();
     if (!term) {
-      return donaciones;
+      return sortedDonaciones;
     }
 
-    return donaciones.filter(item => {
+    return sortedDonaciones.filter(item => {
       return item.tipo.toLowerCase().includes(term) || String(item.cantidad).includes(term);
     });
-  }, [donaciones, searchQuery]);
+  }, [sortedDonaciones, searchQuery]);
+
+  const visibleDonaciones = useMemo(
+    () => filteredDonaciones.slice(0, Math.max(PAGE_SIZE, visibleCount)),
+    [filteredDonaciones, visibleCount]
+  );
+
+  const hasMore = visibleCount < filteredDonaciones.length;
+
+  const handleLoadMore = () => {
+    setVisibleCount(prev => Math.min(prev + PAGE_SIZE, filteredDonaciones.length));
+  };
 
   const totales = useMemo(() => {
     const totalCantidad = donaciones.reduce((acc, curr) => acc + curr.cantidad, 0);
@@ -170,108 +193,100 @@ export default function DonacionesScreen() {
 
   return (
     <ThemedView style={[styles.container, { paddingTop: topSpacing }]}>
-      <View style={styles.headerRow}>
-        <Ionicons name="gift-outline" size={32} color={accentColor} style={styles.headerIcon} />
-        <ThemedText type="title" style={styles.title}>
-          Donaciones
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.headerRow}>
+          <Ionicons name="gift-outline" size={32} color={accentColor} style={styles.headerIcon} />
+          <ThemedText type="title" style={styles.title}>
+            Donaciones
+          </ThemedText>
+        </View>
+        <ThemedText style={styles.description}>
+          Registra cada aporte que recibis y mantene el detalle al dia para tu equipo.
         </ThemedText>
-      </View>
-      <ThemedText style={styles.description}>
-        Registra cada aporte que recibis y mantene el detalle al dia para tu equipo.
-      </ThemedText>
 
-      <SectionCard lightColor="#f8fafc" darkColor="#1f2937">
-        <View style={styles.sectionHeader}>
-          <Ionicons name={editingId !== null ? 'create-outline' : 'add-circle-outline'} size={22} color={accentColor} />
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            {editingId !== null ? 'Editar donacion' : 'Nueva donacion'}
-          </ThemedText>
-        </View>
-        <TextInput
-          style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
-          placeholder="Tipo (alimentos, ropa, dinero, etc.)"
-          placeholderTextColor={placeholderColor}
-          value={tipo}
-          onChangeText={setTipo}
-          autoCapitalize="sentences"
-          accessibilityLabel="Tipo de donacion"
-        />
-        <TextInput
-          style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
-          placeholder="Cantidad"
-          placeholderTextColor={placeholderColor}
-          keyboardType="numeric"
-          value={cantidad}
-          onChangeText={setCantidad}
-          accessibilityLabel="Cantidad"
-        />
-        <AppButton
-          label={editingId !== null ? 'Guardar cambios' : 'Agregar donacion'}
-          onPress={handleSubmit}
-          disabled={submitting}
-        />
-        {editingId !== null && (
-          <AppButton label="Cancelar edicion" onPress={resetForm} variant="secondary" disabled={submitting} />
-        )}
-      </SectionCard>
-
-      <SectionCard lightColor="#f8fafc" darkColor="#1f2937">
-        <View style={styles.sectionHeader}>
-          <Ionicons name="pie-chart-outline" size={22} color={accentColor} />
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Resumen
-          </ThemedText>
-        </View>
-        <View style={styles.summaryRow}>
-          <View style={[styles.summaryCard, isDark ? styles.summaryCardDark : styles.summaryCardLight]}>
-            <Ionicons name="cube-outline" size={24} color={accentColor} style={styles.summaryIcon} />
-            <Text style={[styles.summaryValue, isDark && styles.summaryValueDark]}>{totales.totalCantidad}</Text>
-            <Text style={[styles.summaryLabel, isDark && styles.summaryLabelDark]}>Total de unidades</Text>
+        <SectionCard lightColor="#f8fafc" darkColor="#1f2937">
+          <View style={styles.sectionHeader}>
+            <Ionicons name={editingId !== null ? 'create-outline' : 'add-circle-outline'} size={22} color={accentColor} />
+            <ThemedText type="subtitle" style={styles.sectionTitle}>
+              {editingId !== null ? 'Editar donacion' : 'Nueva donacion'}
+            </ThemedText>
           </View>
-          <View style={[styles.summaryCard, isDark ? styles.summaryCardDark : styles.summaryCardLight]}>
-            <Ionicons name="list-circle-outline" size={24} color={accentColor} style={styles.summaryIcon} />
-            <Text style={[styles.summaryValue, isDark && styles.summaryValueDark]}>{totales.tiposDiferentes}</Text>
-            <Text style={[styles.summaryLabel, isDark && styles.summaryLabelDark]}>Tipos distintos</Text>
-          </View>
-        </View>
-      </SectionCard>
+          <TextInput
+            style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
+            placeholder="Tipo (alimentos, ropa, dinero, etc.)"
+            placeholderTextColor={placeholderColor}
+            value={tipo}
+            onChangeText={setTipo}
+            autoCapitalize="sentences"
+            accessibilityLabel="Tipo de donacion"
+          />
+          <TextInput
+            style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
+            placeholder="Cantidad"
+            placeholderTextColor={placeholderColor}
+            keyboardType="numeric"
+            value={cantidad}
+            onChangeText={setCantidad}
+            accessibilityLabel="Cantidad"
+          />
+          <AppButton
+            label={editingId !== null ? 'Guardar cambios' : 'Agregar donacion'}
+            onPress={handleSubmit}
+            disabled={submitting}
+          />
+          {editingId !== null && (
+            <AppButton label="Cancelar edicion" onPress={resetForm} variant="secondary" disabled={submitting} />
+          )}
+        </SectionCard>
 
-      <SectionCard lightColor="#f8fafc" darkColor="#1f2937" style={styles.listCard}>
-        <View style={styles.sectionHeader}>
-          <Ionicons name="time-outline" size={22} color={accentColor} />
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Historial
-          </ThemedText>
-        </View>
-        <TextInput
-          style={[styles.input, styles.searchInput, isDark ? styles.inputDark : styles.inputLight]}
-          placeholder="Buscar por tipo o cantidad"
-          placeholderTextColor={placeholderColor}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          accessibilityLabel="Buscar donaciones"
-        />
-        {loading ? (
-          <ActivityIndicator size="large" color="#2563eb" style={styles.loader} />
-        ) : (
-          <View style={styles.listWrapper}>
-            <FlatList
-              data={filteredDonaciones}
-              keyExtractor={item => item.id.toString()}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.listContent}
-              ListFooterComponent={<View style={styles.listFooterSpacing} />}
-              ListEmptyComponent={
-                <View style={styles.emptyState}>
-                  <Text style={styles.emptyStateText}>
-                    {donaciones.length === 0
-                      ? 'Todavia no cargaste ninguna donacion.'
-                      : 'No encontramos coincidencias.'}
-                  </Text>
-                </View>
-              }
-              renderItem={({ item }) => (
-                <View style={[styles.listItem, isDark ? styles.listItemDark : styles.listItemLight]}>
+        <SectionCard lightColor="#f8fafc" darkColor="#1f2937">
+          <View style={styles.sectionHeader}>
+            <Ionicons name="pie-chart-outline" size={22} color={accentColor} />
+            <ThemedText type="subtitle" style={styles.sectionTitle}>
+              Resumen
+            </ThemedText>
+          </View>
+          <View style={styles.summaryRow}>
+            <View style={[styles.summaryCard, isDark ? styles.summaryCardDark : styles.summaryCardLight]}>
+              <Ionicons name="cube-outline" size={24} color={accentColor} style={styles.summaryIcon} />
+              <Text style={[styles.summaryValue, isDark && styles.summaryValueDark]}>{totales.totalCantidad}</Text>
+              <Text style={[styles.summaryLabel, isDark && styles.summaryLabelDark]}>Total de unidades</Text>
+            </View>
+            <View style={[styles.summaryCard, isDark ? styles.summaryCardDark : styles.summaryCardLight]}>
+              <Ionicons name="list-circle-outline" size={24} color={accentColor} style={styles.summaryIcon} />
+              <Text style={[styles.summaryValue, isDark && styles.summaryValueDark]}>{totales.tiposDiferentes}</Text>
+              <Text style={[styles.summaryLabel, isDark && styles.summaryLabelDark]}>Tipos distintos</Text>
+            </View>
+          </View>
+        </SectionCard>
+
+        <SectionCard lightColor="#f8fafc" darkColor="#1f2937">
+          <View style={styles.sectionHeader}>
+            <Ionicons name="time-outline" size={22} color={accentColor} />
+            <ThemedText type="subtitle" style={styles.sectionTitle}>
+              Historial
+            </ThemedText>
+          </View>
+          <TextInput
+            style={[styles.input, styles.searchInput, isDark ? styles.inputDark : styles.inputLight]}
+            placeholder="Buscar por tipo o cantidad"
+            placeholderTextColor={placeholderColor}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            accessibilityLabel="Buscar donaciones"
+          />
+          {loading ? (
+            <ActivityIndicator size="large" color="#2563eb" style={styles.loader} />
+          ) : visibleDonaciones.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>
+                {donaciones.length === 0 ? 'Todavia no cargaste ninguna donacion.' : 'No encontramos coincidencias.'}
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.historyList}>
+              {visibleDonaciones.map(item => (
+                <View key={item.id} style={[styles.listItem, isDark ? styles.listItemDark : styles.listItemLight]}>
                   <View style={styles.listItemHeader}>
                     <Ionicons name="gift-outline" size={28} color={accentColor} style={styles.listItemIcon} />
                     <View>
@@ -297,11 +312,20 @@ export default function DonacionesScreen() {
                     />
                   </View>
                 </View>
-              )}
+              ))}
+            </View>
+          )}
+
+          {hasMore && !loading && (
+            <AppButton
+              label="Cargar más historial"
+              variant="secondary"
+              onPress={handleLoadMore}
+              style={styles.loadMoreButton}
             />
-          </View>
-        )}
-      </SectionCard>
+          )}
+        </SectionCard>
+      </ScrollView>
     </ThemedView>
   );
 }
@@ -311,7 +335,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     paddingBottom: 24,
-    rowGap: 12,
+  },
+  scrollContent: {
+    rowGap: 16,
+    paddingBottom: 48,
   },
   headerRow: {
     flexDirection: 'row',
@@ -396,18 +423,10 @@ const styles = StyleSheet.create({
   summaryLabelDark: {
     color: '#cbd5f5',
   },
-  listCard: {
-    flex: 1,
-  },
-  listWrapper: {
-    flex: 1,
-  },
-  listContent: {
-    paddingBottom: 96,
-    paddingTop: 4,
-  },
-  listFooterSpacing: {
-    height: 16,
+  historyList: {
+    flexDirection: 'column',
+    gap: 12,
+    marginTop: 4,
   },
   loader: {
     marginTop: 16,
@@ -415,7 +434,6 @@ const styles = StyleSheet.create({
   listItem: {
     borderRadius: 16,
     padding: 16,
-    marginBottom: 12,
   },
   listItemHeader: {
     flexDirection: 'row',
@@ -475,5 +493,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#64748b',
     textAlign: 'center',
+  },
+  loadMoreButton: {
+    alignSelf: 'center',
+    marginTop: 16,
+    width: '100%',
   },
 });

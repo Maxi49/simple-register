@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -29,6 +29,7 @@ import {
 } from '@/db/database';
 
 const GENERO_OPTIONS: Array<'hombre' | 'mujer'> = ['hombre', 'mujer'];
+const PAGE_SIZE = 5;
 
 export default function RopaScreen() {
   const [items, setItems] = useState<Ropa[]>([]);
@@ -37,6 +38,7 @@ export default function RopaScreen() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -85,6 +87,10 @@ export default function RopaScreen() {
       unsubscribe();
     };
   }, [refresh]);
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [items.length]);
 
   const resetForm = () => {
     setCantidad('');
@@ -161,135 +167,167 @@ export default function RopaScreen() {
     });
   }, [items]);
 
+  const sortedItems = useMemo(
+    () => [...items].sort((a, b) => b.id - a.id),
+    [items]
+  );
+
+  const visibleItems = useMemo(
+    () => sortedItems.slice(0, visibleCount),
+    [sortedItems, visibleCount]
+  );
+
+  const hasMore = visibleCount < sortedItems.length;
+
+  const handleLoadMore = () => {
+    setVisibleCount(prev => Math.min(prev + PAGE_SIZE, sortedItems.length));
+  };
+
   return (
     <ThemedView style={[styles.container, { paddingTop: topSpacing }]}>
-      <View style={styles.headerRow}>
-        <Ionicons name="shirt-outline" size={32} color={accentColor} style={styles.headerIcon} />
-        <ThemedText type="title" style={styles.title}>
-          Ropa
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.headerRow}>
+          <Ionicons name="shirt-outline" size={32} color={accentColor} style={styles.headerIcon} />
+          <ThemedText type="title" style={styles.title}>
+            Ropa
+          </ThemedText>
+        </View>
+        <ThemedText style={styles.description}>
+          Lleva el control de las prendas disponibles y actualiza los datos cuando lo necesites.
         </ThemedText>
-      </View>
-      <ThemedText style={styles.description}>
-        Lleva el control de las prendas disponibles y actualiza los datos cuando lo necesites.
-      </ThemedText>
 
-      <SectionCard lightColor="#f8fafc" darkColor="#1f2937">
-        <View style={styles.sectionHeader}>
-          <Ionicons name={editingId !== null ? 'create-outline' : 'add-circle-outline'} size={22} color={accentColor} />
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            {editingId !== null ? 'Editar registro' : 'Registrar ropa'}
-          </ThemedText>
-        </View>
-        <TextInput
-          style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
-          placeholder="Cantidad de prendas"
-          placeholderTextColor={placeholderColor}
-          keyboardType="numeric"
-          value={cantidad}
-          onChangeText={setCantidad}
-          accessibilityLabel="Cantidad de prendas"
-        />
-        <View style={styles.segmented}>
-          {GENERO_OPTIONS.map(option => {
-            const active = genero === option;
-            return (
-              <Pressable
-                key={option}
-                onPress={() => setGenero(option)}
-                style={[styles.segmentButton, active && styles.segmentButtonActive, active && { backgroundColor: accentColor }]}
-                accessibilityRole="button"
-                accessibilityState={{ selected: active }}
+        <SectionCard lightColor="#f8fafc" darkColor="#1f2937">
+          <View style={styles.sectionHeader}>
+            <Ionicons name={editingId !== null ? 'create-outline' : 'add-circle-outline'} size={22} color={accentColor} />
+            <ThemedText type="subtitle" style={styles.sectionTitle}>
+              {editingId !== null ? 'Editar registro' : 'Registrar ropa'}
+            </ThemedText>
+          </View>
+          <TextInput
+            style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
+            placeholder="Cantidad de prendas"
+            placeholderTextColor={placeholderColor}
+            keyboardType="numeric"
+            value={cantidad}
+            onChangeText={setCantidad}
+            accessibilityLabel="Cantidad de prendas"
+          />
+          <View style={styles.segmented}>
+            {GENERO_OPTIONS.map(option => {
+              const active = genero === option;
+              return (
+                <Pressable
+                  key={option}
+                  onPress={() => setGenero(option)}
+                  style={[
+                    styles.segmentButton,
+                    active && styles.segmentButtonActive,
+                    active && { backgroundColor: accentColor },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                >
+                  <Text style={[styles.segmentLabel, active && styles.segmentLabelActive]}>
+                    {option === 'hombre' ? 'Hombre' : 'Mujer'}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <AppButton
+            label={editingId !== null ? 'Guardar cambios' : 'Agregar registro'}
+            onPress={handleSubmit}
+            disabled={submitting}
+          />
+          {editingId !== null && (
+            <AppButton label="Cancelar edicion" onPress={resetForm} variant="secondary" disabled={submitting} />
+          )}
+        </SectionCard>
+
+        <SectionCard lightColor="#f8fafc" darkColor="#1f2937">
+          <View style={styles.sectionHeader}>
+            <Ionicons name="pie-chart-outline" size={22} color={accentColor} />
+            <ThemedText type="subtitle" style={styles.sectionTitle}>
+              Resumen
+            </ThemedText>
+          </View>
+          <View style={styles.summaryRow}>
+            {resumen.map(item => (
+              <View
+                key={item.genero}
+                style={[styles.summaryCard, isDark ? styles.summaryCardDark : styles.summaryCardLight]}
               >
-                <Text style={[styles.segmentLabel, active && styles.segmentLabelActive]}>
-                  {option === 'hombre' ? 'Hombre' : 'Mujer'}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-        <AppButton
-          label={editingId !== null ? 'Guardar cambios' : 'Agregar registro'}
-          onPress={handleSubmit}
-          disabled={submitting}
-        />
-        {editingId !== null && (
-        <AppButton label="Cancelar edicion" onPress={resetForm} variant="secondary" disabled={submitting} />
-        )}
-      </SectionCard>
-
-      <SectionCard lightColor="#f8fafc" darkColor="#1f2937">
-        <View style={styles.sectionHeader}>
-          <Ionicons name="pie-chart-outline" size={22} color={accentColor} />
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Resumen
-          </ThemedText>
-        </View>
-        <View style={styles.summaryRow}>
-          {resumen.map(item => (
-            <View
-              key={item.genero}
-              style={[styles.summaryCard, isDark ? styles.summaryCardDark : styles.summaryCardLight]}
-            >
-              <Ionicons name={item.icon} size={24} color={accentColor} style={styles.summaryIcon} />
-              <Text style={[styles.summaryValue, isDark && styles.summaryValueDark]}>{item.total}</Text>
-              <Text style={[styles.summaryLabel, isDark && styles.summaryLabelDark]}>{item.label}</Text>
-            </View>
-          ))}
-        </View>
-      </SectionCard>
-
-      <SectionCard lightColor="#f8fafc" darkColor="#1f2937" style={styles.listCard}>
-        <View style={styles.sectionHeader}>
-          <Ionicons name="archive-outline" size={22} color={accentColor} />
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Registros guardados
-          </ThemedText>
-        </View>
-        {loading ? (
-          <ActivityIndicator size="large" color="#2563eb" style={styles.loader} />
-        ) : (
-          <FlatList
-            data={items}
-            keyExtractor={item => item.id.toString()}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>Todavia no hay registros de ropa cargados.</Text>
+                <Ionicons name={item.icon} size={24} color={accentColor} style={styles.summaryIcon} />
+                <Text style={[styles.summaryValue, isDark && styles.summaryValueDark]}>{item.total}</Text>
+                <Text style={[styles.summaryLabel, isDark && styles.summaryLabelDark]}>{item.label}</Text>
               </View>
-            }
-            renderItem={({ item }) => (
-              <View style={[styles.listItem, isDark ? styles.listItemDark : styles.listItemLight]}>
-                <View style={styles.listItemHeader}>
-                  <Ionicons name={item.genero === 'hombre' ? 'male-outline' : 'female-outline'} size={28} color={accentColor} style={styles.listItemIcon} />
-                  <View>
-                    <Text style={[styles.listItemTitle, isDark && styles.listItemTitleDark]}>
-                      {item.cantidad} prendas
-                    </Text>
-                    <Text style={[styles.listItemSubtitle, isDark && styles.listItemSubtitleDark]}>
-                      {item.genero === 'hombre' ? 'Para hombre' : 'Para mujer'}
-                    </Text>
-                    <Text style={[styles.listItemId, isDark && styles.listItemIdDark]}>ID #{item.id}</Text>
+            ))}
+          </View>
+        </SectionCard>
+
+        <SectionCard lightColor="#f8fafc" darkColor="#1f2937">
+          <View style={styles.sectionHeader}>
+            <Ionicons name="archive-outline" size={22} color={accentColor} />
+            <ThemedText type="subtitle" style={styles.sectionTitle}>
+              Registros guardados
+            </ThemedText>
+          </View>
+          {loading ? (
+            <ActivityIndicator size="large" color="#2563eb" style={styles.loader} />
+          ) : visibleItems.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>Todavia no hay registros de ropa cargados.</Text>
+            </View>
+          ) : (
+            <View style={styles.historyList}>
+              {visibleItems.map(item => (
+                <View key={item.id} style={[styles.listItem, isDark ? styles.listItemDark : styles.listItemLight]}>
+                  <View style={styles.listItemHeader}>
+                    <Ionicons
+                      name={item.genero === 'hombre' ? 'male-outline' : 'female-outline'}
+                      size={28}
+                      color={accentColor}
+                      style={styles.listItemIcon}
+                    />
+                    <View>
+                      <Text style={[styles.listItemTitle, isDark && styles.listItemTitleDark]}>
+                        {item.cantidad} prendas
+                      </Text>
+                      <Text style={[styles.listItemSubtitle, isDark && styles.listItemSubtitleDark]}>
+                        {item.genero === 'hombre' ? 'Para hombre' : 'Para mujer'}
+                      </Text>
+                      <Text style={[styles.listItemId, isDark && styles.listItemIdDark]}>ID #{item.id}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.listItemActions}>
+                    <AppButton
+                      label="Editar"
+                      variant="secondary"
+                      onPress={() => startEditing(item)}
+                      style={styles.inlineButton}
+                    />
+                    <AppButton
+                      label="Eliminar"
+                      variant="danger"
+                      onPress={() => confirmDelete(item)}
+                      style={styles.inlineButton}
+                    />
                   </View>
                 </View>
-                <View style={styles.listItemActions}>
-                  <AppButton
-                    label="Editar"
-                    variant="secondary"
-                    onPress={() => startEditing(item)}
-                    style={styles.inlineButton}
-                  />
-                  <AppButton
-                    label="Eliminar"
-                    variant="danger"
-                    onPress={() => confirmDelete(item)}
-                    style={styles.inlineButton}
-                  />
-                </View>
-              </View>
-            )}
-          />
-        )}
-      </SectionCard>
+              ))}
+            </View>
+          )}
+
+          {hasMore && !loading && (
+            <AppButton
+              label="Cargar más registros"
+              variant="secondary"
+              onPress={handleLoadMore}
+              style={styles.loadMoreButton}
+            />
+          )}
+        </SectionCard>
+      </ScrollView>
     </ThemedView>
   );
 }
@@ -299,7 +337,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     paddingBottom: 24,
-    rowGap: 12,
+  },
+  scrollContent: {
+    rowGap: 16,
+    paddingBottom: 48,
   },
   headerRow: {
     flexDirection: 'row',
@@ -405,8 +446,10 @@ const styles = StyleSheet.create({
   summaryLabelDark: {
     color: '#cbd5f5',
   },
-  listCard: {
-    flex: 1,
+  historyList: {
+    flexDirection: 'column',
+    gap: 12,
+    marginTop: 4,
   },
   loader: {
     marginTop: 16,
@@ -414,7 +457,6 @@ const styles = StyleSheet.create({
   listItem: {
     borderRadius: 16,
     padding: 16,
-    marginBottom: 12,
   },
   listItemHeader: {
     flexDirection: 'row',
@@ -474,5 +516,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#64748b',
     textAlign: 'center',
+  },
+  loadMoreButton: {
+    marginTop: 16,
   },
 });

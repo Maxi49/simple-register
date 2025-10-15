@@ -6,7 +6,7 @@ import { ComponentProps } from 'react';
 import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
 
 type IconMapping = Record<SymbolViewProps['name'], ComponentProps<typeof MaterialIcons>['name']>;
-type IconSymbolName = keyof typeof MAPPING;
+export type IconSymbolName = keyof typeof MAPPING;
 
 /**
  * Add your SF Symbols to Material Icons mappings here.
@@ -15,9 +15,22 @@ type IconSymbolName = keyof typeof MAPPING;
  */
 const MAPPING = {
   'house.fill': 'home',
+  house: 'home',
   'paperplane.fill': 'send',
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
+  'person.2.fill': 'people',
+  'person.2': 'people-outline',
+  'graduationcap.fill': 'school',
+  graduationcap: 'school',
+  'person.3.fill': 'groups',
+  'person.3': 'groups',
+  'gift.fill': 'card-giftcard',
+  gift: 'card-giftcard',
+  'chart.bar.fill': 'bar-chart',
+  'chart.bar': 'bar-chart',
+  'tshirt.fill': 'checkroom',
+  tshirt: 'checkroom',
 } as IconMapping;
 
 /**
@@ -37,5 +50,6 @@ export function IconSymbol({
   style?: StyleProp<TextStyle>;
   weight?: SymbolWeight;
 }) {
-  return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />;
+  const iconName = MAPPING[name] ?? 'help-outline';
+  return <MaterialIcons color={color} size={size} name={iconName} style={style} />;
 }

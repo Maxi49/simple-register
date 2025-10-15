@@ -46,11 +46,11 @@ export type ChangeLogEntry = {
 };
 
 export type AppDataSnapshot = {
-  ropa: Array<Omit<Ropa, 'id'> & Partial<Pick<Ropa, 'id'>>>;
-  jovenes: Array<Omit<Joven, 'id'> & Partial<Pick<Joven, 'id'>>>;
-  alumnos: Array<Omit<Alumno, 'id'> & Partial<Pick<Alumno, 'id'>>>;
-  familias: Array<Omit<Familia, 'id'> & Partial<Pick<Familia, 'id'>>>;
-  donaciones: Array<Omit<Donacion, 'id'> & Partial<Pick<Donacion, 'id'>>>;
+  ropa: (Omit<Ropa, 'id'> & Partial<Pick<Ropa, 'id'>>)[];
+  jovenes: (Omit<Joven, 'id'> & Partial<Pick<Joven, 'id'>>)[];
+  alumnos: (Omit<Alumno, 'id'> & Partial<Pick<Alumno, 'id'>>)[];
+  familias: (Omit<Familia, 'id'> & Partial<Pick<Familia, 'id'>>)[];
+  donaciones: (Omit<Donacion, 'id'> & Partial<Pick<Donacion, 'id'>>)[];
 };
 
 const DATA_TABLES: TableName[] = ['ropa', 'jovenes', 'alumnos', 'familias', 'donaciones'];

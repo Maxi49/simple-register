@@ -1,5 +1,3 @@
-const xlsx: any = require('xlsx');
-
 import type {
   Alumno,
   AppDataSnapshot,
@@ -8,6 +6,8 @@ import type {
   Joven,
   Ropa,
 } from '@/db/database';
+
+const xlsx: any = require('xlsx');
 
 export type ExportSnapshot = {
   ropa: Ropa[];
@@ -150,7 +150,7 @@ export const buildExcelFromSnapshot = (snapshot: ExportSnapshot): string => {
     SHEET_NAMES.ropa
   );
 
-  const mapPersonSheet = (data: Array<{ id: number; nombre: string; apellido: string }>) =>
+  const mapPersonSheet = (data: { id: number; nombre: string; apellido: string }[]) =>
     toSheet(
       data.map(item => ({
         id: item.id,

@@ -2,7 +2,7 @@ import 'dotenv/config';
 
 export default {
   expo: {
-    name: 'simple-register',
+    name: 'Registrador Colaborativa Hogar de Cristo',
     slug: 'simple-register',
     version: '1.0.0',
     orientation: 'portrait',

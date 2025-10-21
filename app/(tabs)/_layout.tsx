@@ -183,6 +183,24 @@ export default function TabLayout() {
             ),
           }}
         />
+
+                <Tabs.Screen
+          name="ropa"
+          options={{
+            title: 'Ropa',
+            tabBarIcon: ({ color, focused }) => (
+              <TabBarIcon
+                iosActive="tshirt.fill"
+                iosInactive="tshirt"
+                androidActive="shirt"
+                androidInactive="shirt-outline"
+                color={color}
+                focused={focused}
+                activeBackground="transparent"
+              />
+            ),
+          }}
+        />
         <Tabs.Screen
           name="datos"
           options={{
@@ -200,23 +218,7 @@ export default function TabLayout() {
             ),
           }}
         />
-        <Tabs.Screen
-          name="ropa"
-          options={{
-            title: 'Ropa',
-            tabBarIcon: ({ color, focused }) => (
-              <TabBarIcon
-                iosActive="tshirt.fill"
-                iosInactive="tshirt"
-                androidActive="shirt"
-                androidInactive="shirt-outline"
-                color={color}
-                focused={focused}
-                activeBackground="transparent"
-              />
-            ),
-          }}
-        />
+
       </Tabs>
 
       <Pressable

@@ -1,4 +1,4 @@
-import { PersonManager } from '@/components/person-manager';
+import { FamilyManager } from '@/components/family-manager';
 import {
   actualizarFamilia,
   eliminarFamilia,
@@ -8,12 +8,7 @@ import {
 
 export default function FamiliasScreen() {
   return (
-    <PersonManager
-      title="Familias"
-      entityLabel="familia"
-      pluralLabel="familias"
-      iconName="home-outline"
-      subscriptionTable="familias"
+    <FamilyManager
       fetchAll={obtenerFamilias}
       onCreate={insertarFamilia}
       onUpdate={actualizarFamilia}

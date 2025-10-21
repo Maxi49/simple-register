@@ -4,10 +4,13 @@ import { supabase } from '@/lib/supabase';
 
 export type TableName = 'ropa' | 'jovenes' | 'alumnos' | 'familias' | 'donaciones';
 
+export type RopaTemporada = 'invierno' | 'verano';
+
 export interface Ropa {
   id: number;
   cantidad: number;
-  genero: 'hombre' | 'mujer';
+  tipo: RopaTemporada;
+  talle: string;
 }
 
 export interface Joven {
@@ -24,8 +27,8 @@ export interface Alumno {
 
 export interface Familia {
   id: number;
-  nombre: string;
   apellido: string;
+  miembros: number;
 }
 
 export interface Donacion {
@@ -129,10 +132,10 @@ export const obtenerAlumnos = () => listTable<Alumno>('alumnos');
 export const obtenerFamilias = () => listTable<Familia>('familias');
 export const obtenerDonaciones = () => listTable<Donacion>('donaciones');
 
-export const insertarRopa = async (cantidad: number, genero: 'hombre' | 'mujer') => {
+export const insertarRopa = async (cantidad: number, tipo: RopaTemporada, talle: string) => {
   const { data, error } = await supabase
     .from('ropa')
-    .insert([{ cantidad, genero }])
+    .insert([{ cantidad, tipo, talle }])
     .select()
     .single();
   ensureNoError(error, 'No se pudo insertar ropa');
@@ -141,10 +144,10 @@ export const insertarRopa = async (cantidad: number, genero: 'hombre' | 'mujer')
   return inserted;
 };
 
-export const actualizarRopa = async (id: number, cantidad: number, genero: 'hombre' | 'mujer') => {
+export const actualizarRopa = async (id: number, cantidad: number, tipo: RopaTemporada, talle: string) => {
   const { data, error } = await supabase
     .from('ropa')
-    .update({ cantidad, genero })
+    .update({ cantidad, tipo, talle })
     .eq('id', id)
     .select()
     .single();
@@ -167,24 +170,19 @@ export const eliminarRopa = async (id: number) => {
   return deleted;
 };
 
-const insertPerson = async (table: 'jovenes' | 'alumnos' | 'familias', nombre: string, apellido: string) => {
+const insertPerson = async (table: 'jovenes' | 'alumnos', nombre: string, apellido: string) => {
   const { data, error } = await supabase
     .from(table)
     .insert([{ nombre, apellido }])
     .select()
     .single();
   ensureNoError(error, `No se pudo insertar en ${table}`);
-  const inserted = ensureData((data ?? null) as (Joven | Alumno | Familia) | null, 'Respuesta vacia al insertar');
+  const inserted = ensureData((data ?? null) as (Joven | Alumno) | null, 'Respuesta vacia al insertar');
   await logChange(table, 'INSERT', inserted.id, inserted);
   return inserted;
 };
 
-const updatePerson = async (
-  table: 'jovenes' | 'alumnos' | 'familias',
-  id: number,
-  nombre: string,
-  apellido: string
-) => {
+const updatePerson = async (table: 'jovenes' | 'alumnos', id: number, nombre: string, apellido: string) => {
   const { data, error } = await supabase
     .from(table)
     .update({ nombre, apellido })
@@ -192,7 +190,7 @@ const updatePerson = async (
     .select()
     .single();
   ensureNoError(error, `No se pudo actualizar en ${table}`);
-  const updated = ensureData((data ?? null) as (Joven | Alumno | Familia) | null, 'Respuesta vacia al actualizar');
+  const updated = ensureData((data ?? null) as (Joven | Alumno) | null, 'Respuesta vacia al actualizar');
   await logChange(table, 'UPDATE', id, updated);
   return updated;
 };
@@ -220,9 +218,30 @@ export const actualizarAlumno = (id: number, nombre: string, apellido: string) =
   updatePerson('alumnos', id, nombre, apellido);
 export const eliminarAlumno = (id: number) => deletePerson('alumnos', id);
 
-export const insertarFamilia = (nombre: string, apellido: string) => insertPerson('familias', nombre, apellido);
-export const actualizarFamilia = (id: number, nombre: string, apellido: string) =>
-  updatePerson('familias', id, nombre, apellido);
+export const insertarFamilia = async (apellido: string, miembros: number) => {
+  const { data, error } = await supabase
+    .from('familias')
+    .insert([{ apellido, miembros }])
+    .select()
+    .single();
+  ensureNoError(error, 'No se pudo insertar familia');
+  const inserted = ensureData(data as Familia | null, 'Respuesta vacia al insertar familia');
+  await logChange('familias', 'INSERT', inserted.id, inserted);
+  return inserted;
+};
+
+export const actualizarFamilia = async (id: number, apellido: string, miembros: number) => {
+  const { data, error } = await supabase
+    .from('familias')
+    .update({ apellido, miembros })
+    .eq('id', id)
+    .select()
+    .single();
+  ensureNoError(error, 'No se pudo actualizar familia');
+  const updated = ensureData(data as Familia | null, 'Respuesta vacia al actualizar familia');
+  await logChange('familias', 'UPDATE', id, updated);
+  return updated;
+};
 export const eliminarFamilia = (id: number) => deletePerson('familias', id);
 
 export const insertarDonacion = async (tipo: string, cantidad: number) => {

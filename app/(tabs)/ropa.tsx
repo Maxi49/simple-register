@@ -20,6 +20,7 @@ import { AppButton } from '@/components/ui/app-button';
 import { SectionCard } from '@/components/ui/section-card';
 import {
   Ropa,
+  RopaTemporada,
   actualizarRopa,
   eliminarRopa,
   init,
@@ -28,13 +29,14 @@ import {
   subscribeToTable,
 } from '@/db/database';
 
-const GENERO_OPTIONS: Array<'hombre' | 'mujer'> = ['hombre', 'mujer'];
+const TIPO_OPTIONS: Array<RopaTemporada> = ['invierno', 'verano'];
 const PAGE_SIZE = 5;
 
 export default function RopaScreen() {
   const [items, setItems] = useState<Ropa[]>([]);
   const [cantidad, setCantidad] = useState('');
-  const [genero, setGenero] = useState<'hombre' | 'mujer'>('hombre');
+  const [tipo, setTipo] = useState<RopaTemporada>('invierno');
+  const [talle, setTalle] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -94,7 +96,8 @@ export default function RopaScreen() {
 
   const resetForm = () => {
     setCantidad('');
-    setGenero('hombre');
+    setTipo('invierno');
+    setTalle('');
     setEditingId(null);
   };
 
@@ -104,14 +107,23 @@ export default function RopaScreen() {
       Alert.alert('Dato invalido', 'Ingresa una cantidad mayor a cero.');
       return;
     }
+    const trimmedTalle = talle.trim();
+    if (!trimmedTalle) {
+      Alert.alert('Dato incompleto', 'Ingresa el talle de las prendas.');
+      return;
+    }
+    const normalisedTalle = trimmedTalle.toUpperCase();
+    if (talle !== normalisedTalle) {
+      setTalle(normalisedTalle);
+    }
 
     setSubmitting(true);
     try {
       if (editingId !== null) {
-        await actualizarRopa(editingId, cantidadNumber, genero);
+        await actualizarRopa(editingId, cantidadNumber, tipo, normalisedTalle);
         Alert.alert('Actualizado', 'Se guardaron los cambios.');
       } else {
-        await insertarRopa(cantidadNumber, genero);
+        await insertarRopa(cantidadNumber, tipo, normalisedTalle);
         Alert.alert('Guardado', 'Registro agregado correctamente.');
       }
       await refresh();
@@ -126,7 +138,8 @@ export default function RopaScreen() {
 
   const startEditing = (item: Ropa) => {
     setCantidad(String(item.cantidad));
-    setGenero(item.genero);
+    setTipo(item.tipo);
+    setTalle(item.talle);
     setEditingId(item.id);
   };
 
@@ -154,15 +167,15 @@ export default function RopaScreen() {
   };
 
   const resumen = useMemo(() => {
-    return GENERO_OPTIONS.map(option => {
+    return TIPO_OPTIONS.map(option => {
       const total = items
-        .filter(item => item.genero === option)
+        .filter(item => item.tipo === option)
         .reduce((acc, curr) => acc + curr.cantidad, 0);
       return {
-        genero: option,
+        tipo: option,
         total,
-        label: option === 'hombre' ? 'Para hombre' : 'Para mujer',
-        icon: option === 'hombre' ? ('male-outline' as const) : ('female-outline' as const),
+        label: option === 'invierno' ? 'Temporada invierno' : 'Temporada verano',
+        icon: option === 'invierno' ? ('snow-outline' as const) : ('sunny-outline' as const),
       };
     });
   }, [items]);
@@ -193,7 +206,7 @@ export default function RopaScreen() {
           </ThemedText>
         </View>
         <ThemedText style={styles.description}>
-          Lleva el control de las prendas disponibles y actualiza los datos cuando lo necesites.
+          Lleva el control de las prendas registrando cantidad, temporada y talle de cada prenda.
         </ThemedText>
 
         <SectionCard lightColor="#f8fafc" darkColor="#1f2937">
@@ -213,12 +226,12 @@ export default function RopaScreen() {
             accessibilityLabel="Cantidad de prendas"
           />
           <View style={styles.segmented}>
-            {GENERO_OPTIONS.map(option => {
-              const active = genero === option;
+            {TIPO_OPTIONS.map(option => {
+              const active = tipo === option;
               return (
                 <Pressable
                   key={option}
-                  onPress={() => setGenero(option)}
+                  onPress={() => setTipo(option)}
                   style={[
                     styles.segmentButton,
                     active && styles.segmentButtonActive,
@@ -228,12 +241,21 @@ export default function RopaScreen() {
                   accessibilityState={{ selected: active }}
                 >
                   <Text style={[styles.segmentLabel, active && styles.segmentLabelActive]}>
-                    {option === 'hombre' ? 'Hombre' : 'Mujer'}
+                    {option === 'invierno' ? 'Invierno' : 'Verano'}
                   </Text>
                 </Pressable>
               );
             })}
           </View>
+          <TextInput
+            style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
+            placeholder="Talle (por ejemplo S, 40, 12-14)"
+            placeholderTextColor={placeholderColor}
+            autoCapitalize="characters"
+            value={talle}
+            onChangeText={setTalle}
+            accessibilityLabel="Talle"
+          />
           <AppButton
             label={editingId !== null ? 'Guardar cambios' : 'Agregar registro'}
             onPress={handleSubmit}
@@ -254,7 +276,7 @@ export default function RopaScreen() {
           <View style={styles.summaryRow}>
             {resumen.map(item => (
               <View
-                key={item.genero}
+                key={item.tipo}
                 style={[styles.summaryCard, isDark ? styles.summaryCardDark : styles.summaryCardLight]}
               >
                 <Ionicons name={item.icon} size={24} color={accentColor} style={styles.summaryIcon} />
@@ -284,7 +306,7 @@ export default function RopaScreen() {
                 <View key={item.id} style={[styles.listItem, isDark ? styles.listItemDark : styles.listItemLight]}>
                   <View style={styles.listItemHeader}>
                     <Ionicons
-                      name={item.genero === 'hombre' ? 'male-outline' : 'female-outline'}
+                      name={item.tipo === 'invierno' ? 'snow-outline' : 'sunny-outline'}
                       size={28}
                       color={accentColor}
                       style={styles.listItemIcon}
@@ -294,7 +316,10 @@ export default function RopaScreen() {
                         {item.cantidad} prendas
                       </Text>
                       <Text style={[styles.listItemSubtitle, isDark && styles.listItemSubtitleDark]}>
-                        {item.genero === 'hombre' ? 'Para hombre' : 'Para mujer'}
+                        {item.tipo === 'invierno' ? 'Temporada invierno' : 'Temporada verano'}
+                      </Text>
+                      <Text style={[styles.listItemSubtitle, isDark && styles.listItemSubtitleDark]}>
+                        Talle {item.talle}
                       </Text>
                       <Text style={[styles.listItemId, isDark && styles.listItemIdDark]}>ID #{item.id}</Text>
                     </View>

@@ -5,6 +5,7 @@ import type {
   Familia,
   Joven,
   Ropa,
+  RopaTemporada,
 } from '@/db/database';
 
 const xlsx: any = require('xlsx');
@@ -54,6 +55,7 @@ const toText = (value: unknown) => value === null || value === undefined ? '' : 
 
 type RopaSnapshotRow = AppDataSnapshot['ropa'][number];
 type PersonSnapshotRow = AppDataSnapshot['jovenes'][number];
+type FamiliaSnapshotRow = AppDataSnapshot['familias'][number];
 type DonacionSnapshotRow = AppDataSnapshot['donaciones'][number];
 
 const readSheet = (workbook: any, name: string): Record<string, unknown>[] => {
@@ -74,12 +76,17 @@ export const parseSnapshotFromExcel = (base64: string): AppDataSnapshot => {
     if (cantidad === null) {
       continue;
     }
-    const generoRaw = toText(row.genero).toLowerCase();
-    const genero: 'hombre' | 'mujer' = generoRaw === 'mujer' ? 'mujer' : 'hombre';
+    const tipoRaw = toText(row.tipo).toLowerCase();
+    const tipo: RopaTemporada = tipoRaw === 'verano' ? 'verano' : 'invierno';
+    const talle = toText(row.talle);
+    if (!talle) {
+      continue;
+    }
     ropa.push({
       id: toId(row.id),
       cantidad,
-      genero,
+      tipo,
+      talle,
     });
   }
 
@@ -102,7 +109,23 @@ export const parseSnapshotFromExcel = (base64: string): AppDataSnapshot => {
 
   const jovenes = parsePersonSheet(SHEET_NAMES.jovenes);
   const alumnos = parsePersonSheet(SHEET_NAMES.alumnos);
-  const familias = parsePersonSheet(SHEET_NAMES.familias);
+  const parseFamiliaSheet = (): FamiliaSnapshotRow[] => {
+    const result: FamiliaSnapshotRow[] = [];
+    for (const row of readSheet(workbook, SHEET_NAMES.familias)) {
+      const apellido = toText(row.apellido);
+      const miembros = toNumber(row.miembros);
+      if (!apellido || miembros === null) {
+        continue;
+      }
+      result.push({
+        id: toId(row.id),
+        apellido,
+        miembros,
+      });
+    }
+    return result;
+  };
+  const familias = parseFamiliaSheet();
 
   const donaciones: DonacionSnapshotRow[] = [];
   for (const row of readSheet(workbook, SHEET_NAMES.donaciones)) {
@@ -143,9 +166,10 @@ export const buildExcelFromSnapshot = (snapshot: ExportSnapshot): string => {
       snapshot.ropa.map(item => ({
         id: item.id,
         cantidad: item.cantidad,
-        genero: item.genero,
+        tipo: item.tipo,
+        talle: item.talle,
       })),
-      ['id', 'cantidad', 'genero']
+      ['id', 'cantidad', 'tipo', 'talle']
     ),
     SHEET_NAMES.ropa
   );
@@ -172,7 +196,14 @@ export const buildExcelFromSnapshot = (snapshot: ExportSnapshot): string => {
   );
   xlsx.utils.book_append_sheet(
     workbook,
-    mapPersonSheet(snapshot.familias),
+    toSheet(
+      snapshot.familias.map(item => ({
+        id: item.id,
+        apellido: item.apellido,
+        miembros: item.miembros,
+      })),
+      ['id', 'apellido', 'miembros']
+    ),
     SHEET_NAMES.familias
   );
 
@@ -195,10 +226,10 @@ export const buildExcelFromSnapshot = (snapshot: ExportSnapshot): string => {
 export const EXCEL_TEMPLATE_INFO = {
   sheetNames: SHEET_NAMES,
   columns: {
-    ropa: ['id', 'cantidad', 'genero'],
+    ropa: ['id', 'cantidad', 'tipo', 'talle'],
     jovenes: ['id', 'nombre', 'apellido'],
     alumnos: ['id', 'nombre', 'apellido'],
-    familias: ['id', 'nombre', 'apellido'],
+    familias: ['id', 'apellido', 'miembros'],
     donaciones: ['id', 'tipo', 'cantidad'],
   },
 };

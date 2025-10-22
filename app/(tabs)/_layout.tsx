@@ -150,6 +150,23 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
+          name="actividades"
+          options={{
+            title: 'Actividades',
+            tabBarIcon: ({ color, focused }) => (
+              <TabBarIcon
+                iosActive="calendar.badge.checkmark"
+                iosInactive="calendar"
+                androidActive="calendar"
+                androidInactive="calendar-outline"
+                color={color}
+                focused={focused}
+                activeBackground="transparent"
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
           name="familias"
           options={{
             title: 'Familias',

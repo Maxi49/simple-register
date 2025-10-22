@@ -174,6 +174,7 @@ export default function HomeScreen() {
           </View>
           <AppButton label="Gestionar jovenes" onPress={() => router.push('/(tabs)/jovenes')} />
           <AppButton label="Gestionar alumnos" onPress={() => router.push('/(tabs)/alumnos')} />
+          <AppButton label="Gestionar actividades" onPress={() => router.push('/(tabs)/actividades')} />
           <AppButton label="Gestionar familias" onPress={() => router.push('/(tabs)/familias')} />
           <AppButton label="Gestionar donaciones" onPress={() => router.push('/(tabs)/donaciones')} />
           <AppButton label="Gestionar ropa" onPress={() => router.push('/(tabs)/ropa')} />

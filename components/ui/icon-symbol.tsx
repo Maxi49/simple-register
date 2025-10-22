@@ -31,6 +31,8 @@ const MAPPING = {
   'chart.bar': 'bar-chart',
   'tshirt.fill': 'checkroom',
   tshirt: 'checkroom',
+  'calendar.badge.checkmark': 'event-available',
+  calendar: 'event-note',
 } as IconMapping;
 
 /**

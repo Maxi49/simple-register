@@ -12,7 +12,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
 import { AppButton } from '@/components/ui/app-button';
@@ -20,17 +19,14 @@ import { SectionCard } from '@/components/ui/section-card';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import {
-  obtenerAlumnos,
-  obtenerDonaciones,
-  obtenerFamilias,
-  obtenerJovenes,
-  obtenerRopa,
   obtenerRegistroCambios,
+  obtenerSnapshot,
   reemplazarDatos,
   subscribeToChangeLog,
 } from '@/db/database';
 import type { ChangeLogEntry, TableName } from '@/db/database';
 import { buildExcelFromSnapshot, EXCEL_TEMPLATE_INFO, parseSnapshotFromExcel } from '@/lib/excel';
+import { ensureWritableDirectory, readFileAsBase64, writeBase64File } from '@/utils/base64';
 
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -42,16 +38,20 @@ const CHANGE_ACTION_ICONS: Record<ChangeLogEntry['accion'], IoniconName> = {
 
 const CHANGE_ACTION_LABELS: Record<ChangeLogEntry['accion'], string> = {
   INSERT: 'Alta',
-  UPDATE: 'Actualizacion',
+  UPDATE: 'Actualización',
   DELETE: 'Baja',
 };
 
 const TABLE_LABELS: Record<TableName, string> = {
   ropa: 'Ropa',
-  jovenes: 'Jovenes',
+  jovenes: 'Jóvenes',
   alumnos: 'Alumnos',
   familias: 'Familias',
   donaciones: 'Donaciones',
+  actividades: 'Actividades',
+  alumno_actividades: 'Actividad Alumnos',
+  actividad_asistencias: 'Actividad Asistencias',
+  actividad_asistencia_detalle: 'Actividad Asistencia Detalle',
 };
 
 const formatChangeDate = (value: string) => {
@@ -61,13 +61,13 @@ const formatChangeDate = (value: string) => {
 
 const formatPayloadValue = (value: unknown): string => {
   if (value === null || value === undefined || value === '') {
-    return '—';
+    return 'N/A';
   }
   if (typeof value === 'object') {
     try {
       return JSON.stringify(value);
     } catch {
-      return '—';
+      return 'N/A';
     }
   }
   return String(value);
@@ -85,7 +85,7 @@ const summarisePayload = (payload: ChangeLogEntry['payload']) => {
   return entries
     .slice(0, 4)
     .map(([key, value]) => `${key}: ${formatPayloadValue(value)}`)
-    .join(' • ');
+    .join(' \u2014 ');
 };
 
 const EXCEL_MIME_TYPES = [
@@ -105,6 +105,11 @@ const getPickedFileUri = (result: DocumentPicker.DocumentPickerResult) => {
     return (result as unknown as { uri: string }).uri;
   }
   return null;
+};
+
+const persistBase64Excel = (filename: string, contents: string) => {
+  const directory = ensureWritableDirectory();
+  return writeBase64File(directory, filename, contents);
 };
 
 export default function DatosScreen() {
@@ -167,10 +172,10 @@ export default function DatosScreen() {
         return;
       }
 
-      const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
+      const base64 = await readFileAsBase64(uri);
       const snapshot = parseSnapshotFromExcel(base64);
       await reemplazarDatos(snapshot);
-      Alert.alert('Importacion completada', 'Los datos fueron reemplazados correctamente.');
+      Alert.alert('Importación completada', 'Los datos fueron reemplazados correctamente.');
     } catch (error) {
       console.error(error);
       Alert.alert('Error', 'No se pudo importar el archivo seleccionado.');
@@ -182,29 +187,19 @@ export default function DatosScreen() {
   const handleExport = async () => {
     try {
       setProcessing(true);
-      const snapshot = {
-        ropa: await obtenerRopa(),
-        jovenes: await obtenerJovenes(),
-        alumnos: await obtenerAlumnos(),
-        familias: await obtenerFamilias(),
-        donaciones: await obtenerDonaciones(),
-      };
+      const snapshot = await obtenerSnapshot();
 
       const base64 = buildExcelFromSnapshot(snapshot);
       const filename = `registros-${Date.now()}.xlsx`;
-      const uri = `${FileSystem.cacheDirectory ?? FileSystem.documentDirectory ?? ''}${filename}`;
-
-      await FileSystem.writeAsStringAsync(uri, base64, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
+      const file = persistBase64Excel(filename, base64);
 
       if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri, {
+        await Sharing.shareAsync(file.uri, {
           mimeType: EXCEL_MIME_TYPES[0],
           dialogTitle: 'Compartir registros',
         });
       } else {
-        Alert.alert('Archivo generado', `El archivo se guardo en:\n${uri}`);
+        Alert.alert('Archivo generado', `El archivo se guardó en:\n${file.uri}`);
       }
     } catch (error) {
       console.error(error);

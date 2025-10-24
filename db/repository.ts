@@ -1,15 +1,17 @@
-﻿export * from './types';
+import { supabase } from './client';
+import { ensureNoError } from './repository/utils';
 
 export {
-  init,
   obtenerRopa,
-  obtenerJovenes,
-  obtenerAlumnos,
-  obtenerFamilias,
-  obtenerDonaciones,
   insertarRopa,
   actualizarRopa,
   eliminarRopa,
+} from './repository/clothing';
+
+export {
+  obtenerJovenes,
+  obtenerAlumnos,
+  obtenerFamilias,
   insertarJoven,
   actualizarJoven,
   eliminarJoven,
@@ -19,6 +21,9 @@ export {
   insertarFamilia,
   actualizarFamilia,
   eliminarFamilia,
+} from './repository/people';
+
+export {
   obtenerActividades,
   obtenerActividad,
   insertarActividad,
@@ -35,18 +40,22 @@ export {
   obtenerActividadAsignaciones,
   obtenerActividadAsistenciasTodas,
   obtenerActividadAsistenciaDetalleTodas,
+} from './repository/activities';
+
+export {
+  obtenerDonaciones,
   insertarDonacion,
   actualizarDonacion,
   eliminarDonacion,
-  obtenerSnapshot,
-  reemplazarDatos,
-} from './repository';
+} from './repository/donations';
 
-export {
-  obtenerRegistroCambios,
-  subscribeToTable,
-  subscribeToTables,
-  subscribeToChangeLog,
-} from './change-log';
-export { supabase } from './client';
+export { obtenerSnapshot, reemplazarDatos } from './repository/snapshot';
 
+/**
+ * Verifica conectividad con Supabase ejecutando un select simple.
+ */
+export const init = async (): Promise<boolean> => {
+  const { error } = await supabase.from('donaciones').select('id').limit(1);
+  ensureNoError(error, 'Error al conectar con Supabase');
+  return true;
+};

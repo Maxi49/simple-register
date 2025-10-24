@@ -1,7 +1,7 @@
-import type { AppDataSnapshot, ActividadHorario, AsistenciaEstado } from '@/db/database';
+﻿import type { AppDataSnapshot, ActividadHorario, AsistenciaEstado } from '@/db/database';
 import { DIA_SEMANA_VALUES } from '@/db/database';
 
-const xlsx: any = require('xlsx');
+import { utils, read, write } from 'xlsx';
 
 export type ExportSnapshot = Pick<
   AppDataSnapshot,
@@ -173,12 +173,12 @@ const readSheet = (workbook: any, name: string): Record<string, unknown>[] => {
   if (!sheet) {
     return [];
   }
-  const rows = xlsx.utils.sheet_to_json(sheet, { defval: null }) as Record<string, unknown>[];
+  const rows = utils.sheet_to_json(sheet, { defval: null }) as Record<string, unknown>[];
   return rows.map(normaliseRecord);
 };
 
 export const parseSnapshotFromExcel = (base64: string): AppDataSnapshot => {
-  const workbook = xlsx.read(base64, { type: 'base64' });
+  const workbook = read(base64, { type: 'base64' });
 
   const ropa: RopaSnapshotRow[] = [];
   for (const row of readSheet(workbook, SHEET_NAMES.ropa)) {
@@ -335,7 +335,7 @@ export const parseSnapshotFromExcel = (base64: string): AppDataSnapshot => {
 
 const toSheet = <T extends Record<string, unknown>>(data: T[], headers: string[]) => {
   if (data.length === 0) {
-    return xlsx.utils.aoa_to_sheet([headers]);
+    return utils.aoa_to_sheet([headers]);
   }
   const ordered = data.map(item => {
     const result: Record<string, unknown> = {};
@@ -344,13 +344,13 @@ const toSheet = <T extends Record<string, unknown>>(data: T[], headers: string[]
     });
     return result;
   });
-  return xlsx.utils.json_to_sheet(ordered, { header: headers });
+  return utils.json_to_sheet(ordered, { header: headers });
 };
 
 export const buildExcelFromSnapshot = (snapshot: ExportSnapshot): string => {
-  const workbook = xlsx.utils.book_new();
+  const workbook = utils.book_new();
 
-  xlsx.utils.book_append_sheet(
+  utils.book_append_sheet(
     workbook,
     toSheet(
       snapshot.ropa.map(item => ({
@@ -374,9 +374,9 @@ export const buildExcelFromSnapshot = (snapshot: ExportSnapshot): string => {
       ['id', 'nombre', 'apellido']
     );
 
-  xlsx.utils.book_append_sheet(workbook, mapPersonSheet(snapshot.jovenes), SHEET_NAMES.jovenes);
-  xlsx.utils.book_append_sheet(workbook, mapPersonSheet(snapshot.alumnos), SHEET_NAMES.alumnos);
-  xlsx.utils.book_append_sheet(
+  utils.book_append_sheet(workbook, mapPersonSheet(snapshot.jovenes), SHEET_NAMES.jovenes);
+  utils.book_append_sheet(workbook, mapPersonSheet(snapshot.alumnos), SHEET_NAMES.alumnos);
+  utils.book_append_sheet(
     workbook,
     toSheet(
       snapshot.familias.map(item => ({
@@ -389,7 +389,7 @@ export const buildExcelFromSnapshot = (snapshot: ExportSnapshot): string => {
     SHEET_NAMES.familias
   );
 
-  xlsx.utils.book_append_sheet(
+  utils.book_append_sheet(
     workbook,
     toSheet(
       snapshot.donaciones.map(item => ({
@@ -402,7 +402,7 @@ export const buildExcelFromSnapshot = (snapshot: ExportSnapshot): string => {
     SHEET_NAMES.donaciones
   );
 
-  xlsx.utils.book_append_sheet(
+  utils.book_append_sheet(
     workbook,
     toSheet(
       snapshot.actividades.map(item => ({
@@ -415,7 +415,7 @@ export const buildExcelFromSnapshot = (snapshot: ExportSnapshot): string => {
     SHEET_NAMES.actividades
   );
 
-  xlsx.utils.book_append_sheet(
+  utils.book_append_sheet(
     workbook,
     toSheet(
       snapshot.alumno_actividades.map(item => ({
@@ -428,7 +428,7 @@ export const buildExcelFromSnapshot = (snapshot: ExportSnapshot): string => {
     SHEET_NAMES.alumno_actividades
   );
 
-  xlsx.utils.book_append_sheet(
+  utils.book_append_sheet(
     workbook,
     toSheet(
       snapshot.actividad_asistencias.map(item => ({
@@ -444,7 +444,7 @@ export const buildExcelFromSnapshot = (snapshot: ExportSnapshot): string => {
     SHEET_NAMES.actividad_asistencias
   );
 
-  xlsx.utils.book_append_sheet(
+  utils.book_append_sheet(
     workbook,
     toSheet(
       snapshot.actividad_asistencia_detalle.map(item => ({
@@ -458,7 +458,7 @@ export const buildExcelFromSnapshot = (snapshot: ExportSnapshot): string => {
     SHEET_NAMES.actividad_asistencia_detalle
   );
 
-  return xlsx.write(workbook, { type: 'base64', bookType: 'xlsx' });
+  return write(workbook, { type: 'base64', bookType: 'xlsx' });
 };
 
 export const EXCEL_TEMPLATE_INFO = {

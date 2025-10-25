@@ -1,10 +1,10 @@
-# 🗂️ AplicacionRegistrador Colaborativa para Hogar de Cristo Rio Cuarto 
+#  Aplicacion Registrador Colaborativa para Hogar de Cristo Rio Cuarto 
 
 Aplicación móvil desarrollada con **React Native (Expo)** y **TypeScript**, creada para digitalizar el registro de datos en una organización comunitaria que realiza donaciones, actividades y acompañamiento a personas en situación de vulnerabilidad.
 
 ---
 
-## 🚀 Funcionalidad principal
+##  Funcionalidad principal
 
 * Registro de **alumnos, familias, jóvenes, donaciones y ropa**.
 * Gestión de **actividades** y asistencia.
@@ -16,50 +16,28 @@ Aplicación móvil desarrollada con **React Native (Expo)** y **TypeScript**, cr
 
 ---
 
-## ⚙️ Tecnologías utilizadas
+##  Tecnologías utilizadas
 
 * **TypeScript**
 * **React Native + Expo**
 * **Supabase (PostgreSQL)** para persistencia en la nube
 * **Visual Studio Code** como entorno de desarrollo
 
-## ☁️ Base de datos
+##  Base de datos
 
 La base de datos se aloja en **Supabase**.
 Incluye tablas como `alumnos`, `familias`, `donaciones`, `ropa`, `actividades`, `jovenes`, y registros de asistencia.
 Con el plan gratuito (500 MB) se estiman entre **1,5 y 2 millones de filas** de capacidad, más que suficiente para el uso previsto.
 
----
+##  Uso interno
 
-## 🧩 Instalación y ejecución local
-
-> ⚠️ Este proyecto no requiere builds nativos (funciona directamente en Expo).
-
-```bash
-# Clonar el repositorio
-git clone https://github.com/<tu_usuario>/simple-register.git
-cd simple-register
-
-# Instalar dependencias
-npm install
-
-# Iniciar el proyecto
-npx expo start
-```
-
-Luego escaneá el QR con **Expo Go** en tu celular.
-
----
-
-## 🔒 Uso interno
-
-La aplicación está pensada para uso **interno** por parte del personal de la organización (2–3 personas).
+La aplicación está pensada para uso **interno** por parte del personal de la organización.
 No requiere autenticación ni permisos especiales.
 Todos los datos se guardan en la base de datos compartida en la nube.
 
 ---
 
-## 🧠 Autor
+## Autor
 
 Desarrollado por **Maximiliano Gimenez**
 📍 Universidad Católica de Córdoba – Ingeniería Informática

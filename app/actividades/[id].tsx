@@ -38,7 +38,6 @@ import {
   obtenerAlumnos,
   subscribeToTables,
 } from '@/db/database';
-import { dateToDateString } from '@/lib/datetime';
 
 type AttendanceLoadingMap = Record<number, boolean>;
 

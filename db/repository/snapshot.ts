@@ -1,16 +1,8 @@
 import { supabase } from '../client';
 import { logChange } from '../change-log';
 import type {
-  Actividad,
-  ActividadAsistencia,
-  ActividadAsistenciaDetalle,
-  ActividadHorario,
   AppDataSnapshot,
   AsistenciaEstado,
-  Donacion,
-  Familia,
-  Joven,
-  Ropa,
   TableName,
 } from '../types';
 import { sanitiseHorarios } from '../mappers';

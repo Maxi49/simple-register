@@ -1,53 +1,66 @@
-> Edited for use in IDX on 07/09/12
+# 🗂️ AplicacionRegistrador Colaborativa para Hogar de Cristo Rio Cuarto 
 
-# Welcome to your Expo app 👋
+Aplicación móvil desarrollada con **React Native (Expo)** y **TypeScript**, creada para digitalizar el registro de datos en una organización comunitaria que realiza donaciones, actividades y acompañamiento a personas en situación de vulnerabilidad.
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+---
 
-## Get started
+## 🚀 Funcionalidad principal
 
-#### Android
+* Registro de **alumnos, familias, jóvenes, donaciones y ropa**.
+* Gestión de **actividades** y asistencia.
+* **Pantalla “Datos”** para visualizar todos los registros.
+* **Importación y exportación** de datos a **Excel** (una hoja por tabla).
+* **Botón de actualización manual** para sincronizar con la base de datos.
+* **Validaciones básicas** para evitar campos vacíos o datos inválidos.
+* Manejo de errores simple ante cortes de conexión.
 
-Android previews are defined as a `workspace.onStart` hook and started as a vscode task when the workspace is opened/started.
+---
 
-Note, if you can't find the task, either:
-- Rebuild the environment (using command palette: `IDX: Rebuild Environment`), or
-- Run `npm run android -- --tunnel` command manually run android and see the output in your terminal. The device should pick up this new command and switch to start displaying the output from it.
+## ⚙️ Tecnologías utilizadas
 
-In the output of this command/task, you'll find options to open the app in a
+* **TypeScript**
+* **React Native + Expo**
+* **Supabase (PostgreSQL)** para persistencia en la nube
+* **Visual Studio Code** como entorno de desarrollo
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## ☁️ Base de datos
 
-You'll also find options to open the app's developer menu, reload the app, and more.
+La base de datos se aloja en **Supabase**.
+Incluye tablas como `alumnos`, `familias`, `donaciones`, `ropa`, `actividades`, `jovenes`, y registros de asistencia.
+Con el plan gratuito (500 MB) se estiman entre **1,5 y 2 millones de filas** de capacidad, más que suficiente para el uso previsto.
 
-#### Web
+---
 
-Web previews will be started and managred automatically. Use the toolbar to manually refresh.
+## 🧩 Instalación y ejecución local
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+> ⚠️ Este proyecto no requiere builds nativos (funciona directamente en Expo).
 
 ```bash
-npm run reset-project
+# Clonar el repositorio
+git clone https://github.com/<tu_usuario>/simple-register.git
+cd simple-register
+
+# Instalar dependencias
+npm install
+
+# Iniciar el proyecto
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Luego escaneá el QR con **Expo Go** en tu celular.
 
-## Learn more
+---
 
-To learn more about developing your project with Expo, look at the following resources:
+## 🔒 Uso interno
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+La aplicación está pensada para uso **interno** por parte del personal de la organización (2–3 personas).
+No requiere autenticación ni permisos especiales.
+Todos los datos se guardan en la base de datos compartida en la nube.
 
-## Join the community
+---
 
-Join our community of developers creating universal apps.
+## 🧠 Autor
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Desarrollado por **Maximiliano Gimenez**
+📍 Universidad Católica de Córdoba – Ingeniería Informática
+💬 Proyecto colaborativo ODS – Innovación y Comunidad

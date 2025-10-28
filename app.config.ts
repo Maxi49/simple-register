@@ -44,12 +44,11 @@ export default {
     },
     extra: {
       router: {},
-      eas: { projectId: 'f67d5b47-097f-4c20-855e-322aa552d8dc' },
-      // 👇 mapeo explícito de env a extra (llega en build si las definiste en EAS)
+      // 👇 mantené tus envs sin problema
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
       supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
     },
     runtimeVersion: { policy: 'appVersion' },
-    updates: { url: 'https://u.expo.dev/f67d5b47-097f-4c20-855e-322aa552d8dc' },
   },
 };
+
